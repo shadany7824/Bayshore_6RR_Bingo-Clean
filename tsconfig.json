@@ -5,8 +5,11 @@
         "strict": true,
         "lib": ["esnext"],
         "esModuleInterop": true,
-        "allowJs": true
+        "allowJs": true,
+        "types":[
+            "long"
+        ]
     },
-    "include": [ "src/**/*" ],
+    "include": ["src/**/*"],
     "exclude": ["src/wmmt/**/*"]
 }

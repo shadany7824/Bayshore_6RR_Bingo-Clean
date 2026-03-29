@@ -6,7 +6,7 @@
     "country": "JPN",
     "regionName": "JPN0123",
     "serverIp": "127.0.0.1",
-    "notices": ["Welcome to Bayshore 6RR PLUS","notices 2", "notices 3"],
+    "notices": ["Notices 1","notices 2", "notices 3"],
     "gameOptions": {
         "grantFullTuneTicketToNewUsers": 5, 
         "giftCarsFullyTuned": 1, 

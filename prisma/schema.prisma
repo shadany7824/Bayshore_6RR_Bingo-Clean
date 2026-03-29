@@ -633,3 +633,17 @@ model GhostCar {
   tuneHandling Int
   BingoCard    BingoCard @relation(fields: [bingoCardId], references: [id])
 }
+
+model CarCrownDetect {
+  id            Int     @id @default(autoincrement())
+  carId         Int
+  area          Int?
+  ramp          Int?
+  path          Int?
+  playedAt      Int?
+  tunePower     Int?
+  tuneHandling  Int?
+  status        String  @default("finish")
+  opponentCarId Int?
+  trail         Bytes?
+}

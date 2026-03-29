@@ -6,7 +6,7 @@ Wangan Midnight Maximum Tune 6RR server reimplementation written in TypeScript
 this repo is based on the original repo (https://github.com/ProjectAsakura/Bayshore)
 
 ## What is working
- - Same like 6R
+ - OCM
  - VSORG [Expedition] (some of them maybe... expedition saving works)
  - Highway [New Mode] (some of them maybe... highway saving works)
  - Ghost Trophies Saving

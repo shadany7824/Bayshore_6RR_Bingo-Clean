@@ -102,7 +102,7 @@ export async function getStampTarget(carId: number, arrayCarId: number[])
                     returnCount: getStampTargets[i].returnCount, 
                     locked: getStampTargets[i].locked, 
                     recommended: getStampTargets[i].recommended
-                })
+                } as any)
             );
 
             

@@ -1,0 +1,18 @@
+{
+    "placeId": "JPN0123",
+    "shopName": "Bayshore",
+    "shopNickname": "Bayshore",
+    "regionId": "1",
+    "country": "JPN",
+    "regionName": "JPN0123",
+    "serverIp": "127.0.0.1",
+    "notices": ["Welcome to Bayshore 6RR PLUS","notices 2", "notices 3"],
+    "gameOptions": {
+        "grantFullTuneTicketToNewUsers": 5, 
+        "giftCarsFullyTuned": 1, 
+        "scratchEnabled": 1, 
+        "scratchType": 0, 
+        "giveMeterReward": 0,
+        "newCardsBanned": 0
+    }
+}

@@ -7,11 +7,11 @@ import { prisma } from "..";
 import * as wm from "../wmmt/wm.proto";
 
 // Import Util
-import * as scratch from "../util/scratch";
-import * as common from "../util/common";
+import * as scratch from "./terminal/scratch";
+import * as common from "./util/common";
 
 
-export default class UserModule extends Module {
+export default class UserModule {
     register(app: Application): void {
 
         // Load user data when entering the game or after tapping the bannapass card
@@ -19,9 +19,6 @@ export default class UserModule extends Module {
 
             // Get the request body for the load user request
 			let body = wm.wm.protobuf.LoadUserRequest.decode(req.body);
-
-			// Trim Mojibake (happens if user using release version of bngrw)
-			body.cardChipId = body.cardChipId.replace('��������0000', '');
 			
 			// Block blank card.ini data and vanilla TP blank card data
 			if(body.cardChipId.match(/7F5C9744F11111114326.*/) || body.cardChipId.match(/0000000000.*/))
@@ -29,7 +26,7 @@ export default class UserModule extends Module {
 				body.cardChipId = '';
 				body.accessCode = '';
 			}
-			
+
             // Get the user from the database
 			let user = await prisma.user.findFirst({
 				where: {
@@ -42,6 +39,9 @@ export default class UserModule extends Module {
 							state: true,
 							gtWing: true,
 							lastPlayedPlace: true
+						},
+						where:{
+							state: { toBeDeleted: false } // except deleted car
 						}
 					}
 				}
@@ -58,13 +58,6 @@ export default class UserModule extends Module {
 					cars: [],
 					spappState: wm.wm.protobuf.SmartphoneAppState.SPAPP_UNREGISTERED,
 					transferState: wm.wm.protobuf.TransferState.NOT_REGISTERED,
-					fullTunedCarTicket: false, // TODO: Maybe... idk
-					ghostVs_2Locked: false, // TODO: Maybe... idk
-					ghostVs_3Locked: false, // TODO: Maybe... idk
-					ghostHighwayLocked: false, // TODO: Maybe... idk
-					bingoMismatchNumberAcquiredCount: 0,
-					receivedNumOfItems: 0,
-					bingoPlayedCount: 0,
 				};
 
 				if (!body.cardChipId || !body.accessCode) 
@@ -72,24 +65,44 @@ export default class UserModule extends Module {
 					msg.error = wm.wm.protobuf.ErrorCode.ERR_USER_SUCCEEDED;
 
 					// Encode the response
-					let message = wm.wm.protobuf.LoadUserResponse.encode(msg);
+					let message = wm.wm.protobuf.LoadUserResponse.encode(msg as any);
 
 					// Send the response to the client
-					common.sendResponse(message, res);
+					common.sendResponse(message, res, req.rawHeaders);
 
 					return;
 				}
 
 				// Check if new card registration is allowed or not
-				let newCardsBanned = Config.getConfig().gameOptions.newCardsBanned;
+				let newCardsBanned = Config.getConfig().gameOptions.newCardsBanned || 0;
 
 				// New card registration is allowed
 				if (newCardsBanned === 0)
 				{
+					let checkUser = await prisma.user.findFirst({
+						where:{
+							chipId: body.cardChipId
+						}
+					});
+
+					if(checkUser)
+					{
+						msg.error = wm.wm.protobuf.ErrorCode.ERR_USER_LOCKED;
+
+						// Encode the response
+						let message = wm.wm.protobuf.LoadUserResponse.encode(msg as any);
+
+						// Send the response to the client
+						common.sendResponse(message, res, req.rawHeaders);
+
+						return;
+					}
+
 					let user = await prisma.user.create({
 						data: {
 							chipId: body.cardChipId,
 							accessCode: body.accessCode,
+							bingoPlayedCount: 0,
 							tutorials: [
 								false, // TUTORIAL_ID_STORY = 0,
 								false, // TUTORIAL_ID_TIME_ATTACK = 1,
@@ -111,9 +124,9 @@ export default class UserModule extends Module {
 								false, // TUTORIAL_ID_UNUSED_17 = 17,
 								false, // TUTORIAL_ID_UNUSED_18 = 18,
 								false, // TUTORIAL_ID_UNUSED_19 = 19,
-								false, // TUTORIAL_ID_GHOST_STAMP = 20,
-								false, // TUTORIAL_ID_GHOST_STAMP_DECLINED = 21,
-								false, // TUTORIAL_ID_GHOST_STAMP_FRIENDS = 22,
+								true, // TUTORIAL_ID_GHOST_STAMP = 20,
+								true, // TUTORIAL_ID_GHOST_STAMP_DECLINED = 21,
+								true, // TUTORIAL_ID_GHOST_STAMP_FRIENDS = 22,
 								false, // TUTORIAL_ID_TERMINAL_SCRATCH = 23,
 								false, // TUTORIAL_ID_TURN_SCRATCH_SHEET = 24,
 								false, // TUTORIAL_ID_INVITE_FRIEND_CAMPAIGN = 25,
@@ -147,7 +160,7 @@ export default class UserModule extends Module {
 						}
 					});
 
-					console.log('user made')
+					console.log('user made');
 
 					if (!user) 
 					{
@@ -167,7 +180,7 @@ export default class UserModule extends Module {
 									userId: user.id,
 									category: wm.wm.protobuf.ItemCategory.CAT_CAR_TICKET_FREE,
 									itemId: 5, 
-									type: 0 // Car Ticket
+									type: Number(0) // Car Ticket
 								}
 							});
 						}
@@ -184,10 +197,10 @@ export default class UserModule extends Module {
 				}
 
 				// Encode the response
-				let message = wm.wm.protobuf.LoadUserResponse.encode(msg);
+				let message = wm.wm.protobuf.LoadUserResponse.encode(msg as any);
 
 				// Send the response to the client
-				common.sendResponse(message, res);
+				common.sendResponse(message, res, req.rawHeaders);
 
 				return;
 			}
@@ -199,15 +212,15 @@ export default class UserModule extends Module {
 				}
 			})
 
-			console.log("Current sheet count:", scratchSheetCount);
+			console.log("Current sheet count: ", scratchSheetCount);
 
 			// If the user has no scratch sheets
-			if (scratchSheetCount == 0)
+			if (scratchSheetCount === 0)
 			{
 				console.log("Generating first sheet ...");
 
 				// Generate a new scratch sheet for the user
-				await scratch.generateScratchSheet(user!.id, 1);
+				await scratch.generateScratchSheet(user!.id, Number(1));
 
 				// Set the current scratch sheet to 1
 				await prisma.user.update({
@@ -215,7 +228,7 @@ export default class UserModule extends Module {
 						id: user!.id
 					}, 
 					data: {
-						currentSheet: 1
+						currentSheet: Number(1)
 					}
 				});
 			}
@@ -224,8 +237,8 @@ export default class UserModule extends Module {
 			if (user.carOrder.length > 0)
 			{
 				// Sort the player's car list using the car order property
-				user.cars = user.cars.sort(function(a, b){
-
+				user.cars = user.cars.sort(function(a, b)
+				{
 					// User, and both car IDs exist
 					if (user)
 					{
@@ -336,22 +349,6 @@ export default class UserModule extends Module {
 					}
 				})
 			}
-
-			// Check ghost trophy count if more than 50 or not
-			let ghostExpeditionLocked: boolean = true;
-			let checkRgTrophy = await prisma.car.findFirst({
-				where:{
-					userId: user.id,
-					rgTrophy:{
-						gte: 50 // greater than equal 50
-					}
-				}
-			})
-
-			if(checkRgTrophy)
-			{
-				ghostExpeditionLocked = false;
-			}
 			
 
             // Response data
@@ -392,18 +389,7 @@ export default class UserModule extends Module {
 				wasCreatedToday: false,
 
 				// Invite Friend Campaign Event
-				participatedInInviteFriendCampaign: false,
-
-				// TODO: Make saving about this
-				ghostExpeditionLocked: ghostExpeditionLocked, // must more than 50 rgTrophy
-				ghostVs_2Locked: false,
-				ghostVs_3Locked: false,
-				ghostHighwayLocked: false,
-
-				//Bingo Fixes Lah
-				bingoMismatchNumberAcquiredCount: 0,
-				receivedNumOfItems: 0,
-				bingoPlayedCount: 0,
+				participatedInInviteFriendCampaign: false
 			}
 
 			
@@ -599,10 +585,10 @@ export default class UserModule extends Module {
 			}
 
             // Encode the response
-			let message = wm.wm.protobuf.LoadUserResponse.encode(msg);
+			let message = wm.wm.protobuf.LoadUserResponse.encode(msg as any);
 
             // Send the response to the client
-            common.sendResponse(message, res);
+            common.sendResponse(message, res, req.rawHeaders);
 		})
 
 
@@ -620,9 +606,6 @@ export default class UserModule extends Module {
 
 			// Get the request body for the create user request
 			let body = wm.wm.protobuf.CreateUserRequest.decode(req.body);
-
-			// Trim Mojibake (happens if user using release version of bngrw)
-			body.cardChipId = body.cardChipId.replace('��������0000', '');
 
 			// Get the user info via the card chip id
 			let user = await prisma.user.findFirst({
@@ -661,7 +644,7 @@ export default class UserModule extends Module {
 			let message = wm.wm.protobuf.CreateUserResponse.encode(msg);
 
             // Send response to client
-            common.sendResponse(message, res);
+            common.sendResponse(message, res, req.rawHeaders);
 		});
 
 
@@ -712,7 +695,7 @@ export default class UserModule extends Module {
             let message = wm.wm.protobuf.LoadDriveInformationResponse.encode(msg);
             
             // Send the response to the client
-            common.sendResponse(message, res);
+            common.sendResponse(message, res, req.rawHeaders);
         })
 
         
@@ -728,7 +711,7 @@ export default class UserModule extends Module {
             let message = wm.wm.protobuf.UpdateUserSessionResponse.encode(msg);
 
             // Send the response to the client
-            common.sendResponse(message, res);
+            common.sendResponse(message, res, req.rawHeaders);
         })
 
 
@@ -748,7 +731,7 @@ export default class UserModule extends Module {
 			let message = wmsrv.wm.protobuf.StartTransferResponse.encode(msg);
 
 			// Send the response to the client
-            common.sendResponse(message, res);
+            common.sendResponse(message, res, req.rawHeaders);
         });
 
 
@@ -767,7 +750,7 @@ export default class UserModule extends Module {
 			let message = wmsrv.wm.protobuf.GrantCarRightResponse.encode(msg);
 
 			// Send the response to the client
-            common.sendResponse(message, res);
+            common.sendResponse(message, res, req.rawHeaders);
         });
 
 
@@ -786,7 +769,7 @@ export default class UserModule extends Module {
 			let message = wmsrv.wm.protobuf.AskAccessCodeResponse.encode(msg);
 
 			// Send the response to the client
-            common.sendResponse(message, res);
+            common.sendResponse(message, res, req.rawHeaders);
         });
 
         
@@ -805,7 +788,7 @@ export default class UserModule extends Module {
 			let message = wmsrv.wm.protobuf.ParticipateInInviteFriendCampaignResponse.encode(msg);
 
 			// Send the response to the client
-            common.sendResponse(message, res);
+            common.sendResponse(message, res, req.rawHeaders);
         });
 
 
@@ -823,7 +806,7 @@ export default class UserModule extends Module {
 			let message = wmsrv.wm.protobuf.ConsumeUserItemResponse.encode(msg);
 
 			// Send the response to the client
-            common.sendResponse(message, res);
+            common.sendResponse(message, res, req.rawHeaders);
 		})
         */
     }

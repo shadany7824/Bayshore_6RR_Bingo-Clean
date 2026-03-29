@@ -1,18 +1,18 @@
 ### THIS PROJECT IS CURRENTLY UNSUPPORTED. DO NOT MESSAGE ANYONE FOR HELP
 
-# Bayshore 6R
-Wangan Midnight Maximum Tune 6R server reimplementation written in TypeScript
+# Bayshore 6RR
+Wangan Midnight Maximum Tune 6RR server reimplementation written in TypeScript
 
 this repo is based on the original repo (https://github.com/ProjectAsakura/Bayshore)
 
 ## What is working
- - Same like 6
+ - Same like 6R
  - VSORG [Expedition] (some of them maybe... expedition saving works)
  - Highway [New Mode] (some of them maybe... highway saving works)
  - Ghost Trophies Saving
  
  ## What is not working 
- - Transfer from 6
+ - Transfer from 6R
  - Wanted Info for each area (game will crash... idk why)
 
 ## Credits

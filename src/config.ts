@@ -48,11 +48,15 @@ export interface GameOptions {
 
     // Give meter reward every n*100 play
     giveMeterReward: number; //1 is on, 0 is off
+
+    // If set to 1, will block clients with non-matching protobuf revision
+    // If set to 0, revision check is disabled (default)
+    revisionCheck: number; // 1 is on, 0 is off
     
     // if the new card is not in the User databese
     // set this option to 1 will not create a new card
     // and prevent new card registration
-    newCardsBanned: number;//1 is on, 0 is off
+    newCardsBanned: number; //1 is on, 0 is off
 }
 
 export class Config {

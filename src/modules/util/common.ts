@@ -62,7 +62,7 @@ export function sendResponse(message: Writer, res: Response, headers: string[]) 
 
         // Get config
         const config = Config.getConfig();
-        let revisionCheck = config.gameOptions.revisionCheck ?? 0; // Default to 0 (disabled)
+        let revisionCheck = config.gameOptions.revisionCheck || 0;
 
         // Get the end of the message
         let end = message.finish();
@@ -80,9 +80,9 @@ export function sendResponse(message: Writer, res: Response, headers: string[]) 
             // Get the protobuf revision from the headers
             let revision = getProtobufRevision(headers);
 
-            // Revision does not match - log but do not block
+            // Revision does not match
             if (revision !== 8053) {
-                writeLog(`Client revision ${revision} does not match server revision 8053`);
+                throw Error(`Protobuf revision does not match!`);
             }
         }
 

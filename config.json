@@ -7,6 +7,7 @@
     "regionName": "JPN0123",
     "serverIp": "127.0.0.1",
     "notices": ["Notices 1","notices 2", "notices 3"],
+    "customTitle": "Test"
     "gameOptions": {
         "grantFullTuneTicketToNewUsers": 5, 
         "giftCarsFullyTuned": 1, 
